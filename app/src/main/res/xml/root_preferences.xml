@@ -1,0 +1,59 @@
+<PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <PreferenceCategory app:title="@string/general_header">
+
+        <!--
+        <EditTextPreference
+            app:key="signature"
+            app:title="@string/signature_title"
+            app:useSimpleSummaryProvider="true" />
+        -->
+
+        <ListPreference
+            app:defaultValue="client"
+            app:entries="@array/mode_entries"
+            app:entryValues="@array/mode_values"
+            app:key="mode"
+            app:title="@string/mode_title"
+            app:useSimpleSummaryProvider="true" />
+
+        <SwitchPreferenceCompat
+            app:key="reconnect"
+            app:title="@string/reconnect_title" />
+
+        <SwitchPreferenceCompat
+            app:key="verbose"
+            app:title="@string/verbose_title" />
+
+        <ListPreference
+            app:defaultValue="5"
+            app:entries="@array/max_retry"
+            app:entryValues="@array/max_retry"
+            app:key="max_retry"
+            app:title="@string/max_retry"
+            app:useSimpleSummaryProvider="true" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory app:title="@string/excl_header">
+
+        <SwitchPreferenceCompat
+            app:key="excl_ipv4"
+            app:title="@string/excl_ipv4" />
+
+        <SwitchPreferenceCompat
+            app:key="excl_ipv6"
+            app:title="@string/excl_ipv6" />
+
+        <!--
+        <SwitchPreferenceCompat
+            app:dependency="sync"
+            app:key="attachment"
+            app:summaryOff="@string/attachment_summary_off"
+            app:summaryOn="@string/attachment_summary_on"
+            app:title="@string/attachment_title" />
+        -->
+
+    </PreferenceCategory>
+
+</PreferenceScreen>

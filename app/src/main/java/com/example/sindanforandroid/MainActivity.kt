@@ -1,12 +1,16 @@
 package com.example.sindanforandroid
 
 import android.content.Context
+import android.content.Intent
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.net.wifi.WifiInfo
 import android.net.wifi.WifiManager
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
+import android.view.Menu
+import android.view.MenuItem
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import kotlinx.android.synthetic.main.activity_main.*
@@ -23,14 +27,33 @@ class MainActivity : AppCompatActivity() {
             textview.text = "connected"
         } else {
             textview.text = "disconnected"
-        }
-        textview2.text = GetSSID()
+        } // ここまでは正しく動いているっぽい
+        textview2.text = GetWifiEnvironment(this)
+        // 速度は取れた
+        textview3.text = GetSpeed(this) + WifiInfo.LINK_SPEED_UNITS
     }
 
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.main, menu)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        when(item?.itemId) {
+            R.id.setting -> {
+                val intent = Intent(this, SettingsActivity::class.java)
+                startActivity(intent)
+            }
+        }
+        return super.onOptionsItemSelected(item)
+    }
+
+    // MainActivity 内にあるのもおかしい？
     private fun isWifiAvailable(context: Context): Boolean {
         val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             val nw      = connectivityManager.activeNetwork ?: return false
+            // NetworkCapabilities という名前の構造体（単数構造体の複数形ではない）単体でコレクション風
             val actNw = connectivityManager.getNetworkCapabilities(nw) ?: return false
             // return true only　when wifi connection is established.
             return when {
@@ -46,22 +69,31 @@ class MainActivity : AppCompatActivity() {
             return nwInfo.isConnected
         }
     }
+    //ToDo: 正しい SSID を取れていない / Manifest いじったのにまだだめ
+    //ToDo: データ取得をどうするか。リスト返してもらったほうがいいけど、GC とかちゃんとあるのかな
+    private fun GetWifiEnvironment(context: Context): String{
+        val wifiManager = context.getSystemService(Context.WIFI_SERVICE) as WifiManager;
 
-    private fun GetSSID(): String{
-        var ssid: String? = null
-        val wifiManager: WifiManager = getSystemService(WIFI_SERVICE) as WifiManager;
-
-        if (wifiManager.isWifiEnabled) {
-            Toast.makeText(this, "WIFI OFF", Toast.LENGTH_SHORT).show()
-            wifiManager.isWifiEnabled = false;
-        } else {
-            Toast.makeText(this, "WIFI ON", Toast.LENGTH_SHORT).show()
-            wifiManager.isWifiEnabled = true;
+        // API10 からアプリからの wifi on/off できなくなった
+        // Wifi の設定画面を出して、enabled になるまで待つ、という処理が必要
+        if (!wifiManager.isWifiEnabled) {
+            Toast.makeText(context, "WIFI ON", Toast.LENGTH_SHORT).show()
+            wifiManager.setWifiEnabled(true);
         }
         if(!wifiManager.isWifiEnabled) return "";
+        // connectInfo まで取れてそう、IP アドレスは正しい
+        val connectInfo = wifiManager.connectionInfo
+        //
+        val state = WifiInfo.getDetailedStateOf(connectInfo?.supplicantState)
+        return wifiManager.connectionInfo.ssid
+    }
+
+    private fun GetSpeed(context: Context): String{
+        val wifiManager: WifiManager = getSystemService(WIFI_SERVICE) as WifiManager;
         val connectInfo = wifiManager.connectionInfo
         val state = WifiInfo.getDetailedStateOf(connectInfo?.supplicantState)
-        ssid = connectInfo.getSSID();
-        return ssid
+        return connectInfo.linkSpeed.toString()
     }
+
+
 }

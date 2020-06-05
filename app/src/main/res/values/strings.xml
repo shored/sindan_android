@@ -1,3 +1,25 @@
 <resources>
     <string name="app_name">SindanForAndroid</string>
+    <string name="title_activity_settings">Settings</string>
+
+    <!-- Preference Titles -->
+    <string name="general_header">General</string>
+    <string name="sync_header">Sync</string>
+
+    <!-- Messages Preferences -->
+    <string name="signature_title">Your signature</string>
+    <string name="mode_title">Mode</string>
+
+    <string name="reconnect_title">Reconnect</string>
+    <string name="verbose_title">Verbose Mode</string>
+    <string name="max_retry">Max Retry</string>
+
+    <string name="attachment_title">Download incoming attachments</string>
+    <string name="attachment_summary_on">Automatically download attachments for incoming emails
+    </string>
+    <string name="attachment_summary_off">Only download attachments when manually requested</string>
+    <string name="top_text">TOP PAGE</string>
+    <string name="excl_ipv4">Exclusion IPv4</string>
+    <string name="excl_ipv6">Exclusion IPv6</string>
+    <string name="excl_header">Exclusion</string>
 </resources>
