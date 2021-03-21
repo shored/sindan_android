@@ -1,18 +1,20 @@
 package com.example.sindanforandroid
 
+import android.app.Dialog
 import android.content.Context
 import android.content.Intent
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.net.wifi.WifiInfo
 import android.net.wifi.WifiManager
+import android.os.AsyncTask
 import android.os.Build
 import android.os.Bundle
-import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.fragment.app.DialogFragment
 import kotlinx.android.synthetic.main.activity_main.*
 
 
@@ -21,6 +23,11 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        measure.setOnClickListener{
+            var diag = Diagnosis(this)
+            AsyncHttpRequest().execute(diag)
+        }
         var greeting = "SINDAN エージェントプロトタイプ"
         val isconnect = isWifiAvailable(this)
         if (isconnect == true) {
@@ -37,6 +44,67 @@ class MainActivity : AppCompatActivity() {
         menuInflater.inflate(R.menu.main, menu)
         return true
     }
+    inner class AsyncHttpRequest : AsyncTask<Diagnosis, Diagnosis, Void>()
+    {
+//        private var mainActivity: Activity ;
+        override fun onPreExecute() {
+            // open progress dialog
+      //      text.setText("start")
+            // change measure button unclickable
+            measure.isClickable = false
+            Thread.sleep(800)
+        }
+
+        // start diagnosis asynchronously
+        // 何回も実行される？使い方がおかしいかも
+        override fun doInBackground(vararg params: Diagnosis?): Void? {
+            var diag = params[0]
+            diag?.startDiagnosis()
+            AsyncHttpRequest().execute(diag)
+            return null
+        }
+
+        override fun onProgressUpdate(vararg values: Diagnosis?) {
+            super.onProgressUpdate(*values)
+        }
+
+        // called when a diagnosis finished
+        override fun onPostExecute(result: Void?) {
+            // change measure button clickable
+            measure.isClickable = true
+
+            // 取得した結果をテキストビューに入れちゃったり
+    //        TextView tv =(TextView) mainActivity . findViewById (R.id.name);
+    //        tv.setText(result)
+        }
+
+    }
+    class DiagnosisDialog //空のコンストラクタ（DialogFragmentのお約束）
+        : DialogFragment() {
+        override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
+            val dialog = Dialog(activity!!)
+//            dialog.setContentView(R.layout.dialog_measure)
+            dialog.setCancelable(false)
+            dialog.setTitle("@string/measuring")
+            return dialog
+        }
+
+        companion object {
+            //インスタンス作成
+            fun newInstance(): DiagnosisDialog {
+                return DiagnosisDialog()
+            }
+        }
+    }
+    /*
+    fun onMeasureButtonTapped(view: View?): Boolean {
+        var diag = Diagnosis(this)
+        diag.startDiagnosis()
+
+        return true
+    }
+
+     */
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when(item?.itemId) {

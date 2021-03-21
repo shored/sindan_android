@@ -51,7 +51,7 @@ class Diagnosis constructor(val context: Context) {
 
         val campaign_uuid = UUID.randomUUID()
         var result = DiagResult("dns", "IPv4", "test_diag",
-            campaign_uuid, "test",
+            campaign_uuid, "1",
             "192.168.1.1", "this is test", current)
 
         addDiagResult(result)
@@ -81,6 +81,7 @@ class Diagnosis constructor(val context: Context) {
         diag_results.forEach {
             var gson = Gson()
             val jsonString = gson.toJson(it)
+            Log.i("test", "json string: " + jsonString)
             /* フォーマット例
             {
                 "detail": "48.268",
@@ -93,24 +94,24 @@ class Diagnosis constructor(val context: Context) {
                 "target": "1.1.1.1"
             }
              */
-            // 送信
+            // 送信: TODO: なぜかずっとループする
             var con: HttpURLConnection? = null
             try {
-                val urlStr = "http://fluentd.c.u-tokyo.ac.jp:8888/sindan.log"
+                val urlStr = "http://fluentd.sindan-net.com:8888/sindan.log"
                 val url = URL(urlStr)
                 con = url.openConnection() as HttpURLConnection
                 con.requestMethod = "POST"
                 con.instanceFollowRedirects = false
+                con.setRequestProperty("User-Agent", "Android");
                 con.addRequestProperty("Content-Type", "application/json; charset=UTF-8")
                 con.doOutput = true
-                con.doInput = true
+//                con.doInput = true
                 con.connect()
 
                 val os = con.outputStream
                 val ps = PrintStream(os)
                 ps.print(jsonString)
                 ps.close()
-                os.close()
                 val responseCode = con.responseCode
             } catch (e: InterruptedException) {
                 e.printStackTrace()

@@ -6,6 +6,13 @@
     <string name="general_header">General</string>
     <string name="sync_header">Sync</string>
 
+    <!-- Preference Main Window -->
+    <string name="measure">Measure</string>
+
+    <!-- Messages Diagnosis -->
+    <string name="measuring">Measuring</string>
+    <string name="pleasewait">Please Wait...</string>
+
     <!-- Messages Preferences -->
     <string name="signature_title">Your signature</string>
     <string name="mode_title">Mode</string>
