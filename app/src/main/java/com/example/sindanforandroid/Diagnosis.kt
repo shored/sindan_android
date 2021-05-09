@@ -19,7 +19,7 @@ import java.util.*
 
 
 // layer, log_group, log_type, log_campaign_uuid, result, target, detail, occurred_at
-data class DiagResult(val layer: String, val log_group: String, val log_type: String,
+    data class DiagResult(val layer: String, val log_group: String, val log_type: String,
                       val log_campaign_uuid: UUID, val result: String, val target: String,
                       val detail: String, val occurred_at: LocalDateTime) {
 }
@@ -75,6 +75,7 @@ class Diagnosis constructor(val context: Context) {
 
     fun uploadResults() {
         // Kotlin では必要ないのかも
+        // TODO: 一回 Measure 押しただけなのに何度も入るのは doBackGround が何度も呼ばれるせい
         if (diag_results.isEmpty())
             return
 
@@ -94,7 +95,7 @@ class Diagnosis constructor(val context: Context) {
                 "target": "1.1.1.1"
             }
              */
-            // 送信: TODO: なぜかずっとループする
+            // 送信:
             var con: HttpURLConnection? = null
             try {
                 val urlStr = "http://fluentd.sindan-net.com:8888/sindan.log"
@@ -114,6 +115,7 @@ class Diagnosis constructor(val context: Context) {
                 ps.close()
                 val responseCode = con.responseCode
             } catch (e: InterruptedException) {
+                // 送信ネットワークエラー
                 e.printStackTrace()
             } finally {
                 con?.disconnect()

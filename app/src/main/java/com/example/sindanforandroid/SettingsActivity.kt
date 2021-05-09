@@ -25,6 +25,7 @@ class SettingsActivity : AppCompatActivity() {
             setPreferencesFromResource(R.xml.root_preferences, rootKey)
         }
     }
+    // TODO: 戻るを実装
 
     // ひとまずひな形、未呼び出し
     protected fun setListPreferenceData(lp: ListPreference): Boolean {

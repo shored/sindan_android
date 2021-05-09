@@ -12,6 +12,10 @@ import android.os.Build
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
+import android.view.View
+import android.widget.AdapterView
+import android.widget.Button
+import android.widget.ListView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.DialogFragment
@@ -24,10 +28,15 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        /*
         measure.setOnClickListener{
             var diag = Diagnosis(this)
             AsyncHttpRequest().execute(diag)
-        }
+        } */
+
+        val measure = findViewById<Button>(R.id.measure)
+        measure.setOnClickListener(MeasureClickListener())
+
         var greeting = "SINDAN エージェントプロトタイプ"
         val isconnect = isWifiAvailable(this)
         if (isconnect == true) {
@@ -40,10 +49,18 @@ class MainActivity : AppCompatActivity() {
         textview3.text = GetSpeed(this) + WifiInfo.LINK_SPEED_UNITS
     }
 
+    private inner class MeasureClickListener : View.OnClickListener {
+        override fun onClick(p0: View?) {
+            val measureDialog = DiagnosisDialog.newInstance("表示するメッセージ")
+            measureDialog.show(supportFragmentManager, "DiagnosisDialog")
+        }
+    }
+
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         menuInflater.inflate(R.menu.main, menu)
         return true
     }
+/*
     inner class AsyncHttpRequest : AsyncTask<Diagnosis, Diagnosis, Void>()
     {
 //        private var mainActivity: Activity ;
@@ -54,16 +71,14 @@ class MainActivity : AppCompatActivity() {
             measure.isClickable = false
             Thread.sleep(800)
         }
-
         // start diagnosis asynchronously
-        // 何回も実行される？使い方がおかしいかも
+        // TODO: 何回も実行される？同期処理の使い方がおかしいかも
         override fun doInBackground(vararg params: Diagnosis?): Void? {
             var diag = params[0]
             diag?.startDiagnosis()
             AsyncHttpRequest().execute(diag)
             return null
         }
-
         override fun onProgressUpdate(vararg values: Diagnosis?) {
             super.onProgressUpdate(*values)
         }
@@ -79,6 +94,9 @@ class MainActivity : AppCompatActivity() {
         }
 
     }
+
+ */
+/*
     class DiagnosisDialog //空のコンストラクタ（DialogFragmentのお約束）
         : DialogFragment() {
         override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
@@ -96,6 +114,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
+    */
     /*
     fun onMeasureButtonTapped(view: View?): Boolean {
         var diag = Diagnosis(this)
@@ -116,7 +135,8 @@ class MainActivity : AppCompatActivity() {
         return super.onOptionsItemSelected(item)
     }
 
-    // MainActivity 内にあるのもおかしい？
+    // MainActivity 内にあるのはおかしい
+    // Diagnosis に移動すべき
     private fun isWifiAvailable(context: Context): Boolean {
         val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
