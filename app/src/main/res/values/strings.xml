@@ -12,6 +12,7 @@
     <!-- Messages Diagnosis -->
     <string name="measuring">Measuring</string>
     <string name="pleasewait">Please Wait...</string>
+    <string name="bt_cancel">Cancel</string>
 
     <!-- Messages Preferences -->
     <string name="signature_title">Your signature</string>

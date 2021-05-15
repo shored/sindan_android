@@ -2,9 +2,12 @@ package com.example.sindanforandroid
 
 import android.content.Context
 import android.net.DnsResolver
+import android.net.wifi.WifiInfo
 import android.net.wifi.WifiManager
 import android.util.Log
 import androidx.core.content.ContextCompat
+import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.getSystemService
 import com.google.gson.Gson
 //import com.sun.xml.internal.ws.streaming.XMLStreamWriterUtil.getOutputStream
 import com.wandroid.traceroute.TraceRoute
@@ -17,21 +20,23 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.*
 
-
+// TODO: 検討: inner class にする？ -> kotlin では data は inner にできない模様。
+// お作法的に違う？ただ setter/getter 以外に何か必要そうには見えない
 // layer, log_group, log_type, log_campaign_uuid, result, target, detail, occurred_at
-    data class DiagResult(val layer: String, val log_group: String, val log_type: String,
+data class DiagResult(val layer: String, val log_group: String, val log_type: String,
                       val log_campaign_uuid: UUID, val result: String, val target: String,
                       val detail: String, val occurred_at: LocalDateTime) {
 }
 
 //簡単なセッターがあればいい気がする
+//TODO: Diagnosis 自体に log_campaign を示すメンバを入れる
 class Diagnosis constructor(val context: Context) {
+
     private var diag_results = mutableListOf<DiagResult>()
     init {
         val log_campaign_uuid = UUID.randomUUID().toString()
     }
 
-    //ダイアログを表示しつつ実行
     fun startDiagnosis() {
         test_diag()
 
@@ -41,6 +46,13 @@ class Diagnosis constructor(val context: Context) {
 //        phase4()
 //        phase5()
         uploadResults()
+    }
+
+    private fun GetSpeed(context: Context): String{
+        val wifiManager: WifiManager = context.getSystemService(Context.WIFI_SERVICE) as WifiManager;
+        val connectInfo = wifiManager.connectionInfo
+        val state = WifiInfo.getDetailedStateOf(connectInfo?.supplicantState)
+        return connectInfo.linkSpeed.toString()
     }
 
     fun test_diag() {
