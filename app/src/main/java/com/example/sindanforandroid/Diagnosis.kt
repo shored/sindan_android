@@ -10,7 +10,6 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.getSystemService
 import com.google.gson.Gson
 //import com.sun.xml.internal.ws.streaming.XMLStreamWriterUtil.getOutputStream
-import com.wandroid.traceroute.TraceRoute
 import org.json.JSONObject
 import java.io.PrintStream
 import java.net.HttpURLConnection
@@ -576,8 +575,8 @@ else
 
         Log.i(phase3, "\n\n\n=========== Phase3 Start ===========")
 
-        var traceResult = TraceRoute.traceRoute("8.8.8.8")
-        Log.d(phase3, traceResult.toString())
+//        var traceResult = TraceRoute.traceRoute("8.8.8.8")
+//        Log.d(phase3, traceResult.toString())
 
         val dnsResolver = DnsResolver.getInstance()
         dnsResolver.query(null, "google.co.jp", DnsResolver.FLAG_NO_CACHE_LOOKUP, ContextCompat.getMainExecutor(context), null, object: DnsResolver.Callback<List<InetAddress>> {
@@ -707,8 +706,8 @@ if [ "$v4addr_type" = "private" ] || [ "$v4addr_type" = "grobal" ]; then
     # Do traceroute to extarnal IPv4 servers
     cmdset_trace "$layer" 4 srv "$target" "$count" &
     */
-        var traceResult = TraceRoute.traceRoute(externalDNSServerAddr)
-        Log.i(phase4, traceResult.toString())
+//        var traceResult = TraceRoute.traceRoute(externalDNSServerAddr)
+//        Log.i(phase4, traceResult.toString())
 
         /*
     if [ "$MODE" = "client" ]; then
