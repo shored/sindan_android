@@ -1,5 +1,6 @@
 package com.example.sindanforandroid
 
+import android.app.Activity
 import android.app.AlertDialog
 import android.app.Dialog
 import android.content.DialogInterface
@@ -7,8 +8,10 @@ import android.os.Bundle
 import android.os.SystemClock.sleep
 import android.widget.TextView
 import androidx.fragment.app.DialogFragment
+import java.util.concurrent.Executors
 
 class DiagnosisDialog : DialogFragment() {
+
     companion object {
         fun newInstance(message: String): DiagnosisDialog {
             val instance = DiagnosisDialog()
@@ -31,17 +34,29 @@ class DiagnosisDialog : DialogFragment() {
         builder.setView(view)
 
         // block できないのでここで非同期タスクを実行
+        startDiagnosis()
 
         return builder.create()
     }
 
-    private fun StartDiagnosis() {
+    private inner class DiagnosisWorker(): Runnable {
+        override fun run() {
+            var diagnosis = Diagnosis(requireContext())
+            diagnosis.startDiagnosis()
+        }
     }
+
+    private fun startDiagnosis() {
+        val backgroundReceiver = DiagnosisWorker()
+        val executeService = Executors.newSingleThreadExecutor()
+        executeService.submit(backgroundReceiver)
+    }
+
 
     private inner class DialogButtonClickLister : DialogInterface.OnClickListener {
         override fun onClick(p0: DialogInterface?, p1: Int) {
-            TODO("Not yet implemented")
             // Abort Diagnosis
+            TODO("キャンセル時に計測停止")
         }
     }
 

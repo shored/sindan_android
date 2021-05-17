@@ -87,7 +87,6 @@ class Diagnosis constructor(val context: Context) {
 
     fun uploadResults() {
         // Kotlin では必要ないのかも
-        // TODO: 一回 Measure 押しただけなのに何度も入るのは doBackGround が何度も呼ばれるせい
         if (diag_results.isEmpty())
             return
 
