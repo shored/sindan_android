@@ -4,7 +4,9 @@ import android.content.Context
 import android.net.DnsResolver
 import android.net.wifi.WifiInfo
 import android.net.wifi.WifiManager
+import android.provider.Settings.Global.getString
 import android.util.Log
+import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.getSystemService
@@ -24,7 +26,24 @@ import java.util.*
 // layer, log_group, log_type, log_campaign_uuid, result, target, detail, occurred_at
 data class DiagResult(val layer: String, val log_group: String, val log_type: String,
                       val log_campaign_uuid: UUID, val result: String, val target: String,
-                      val detail: String, val occurred_at: LocalDateTime) {
+                      val detail: String, val occurred_at: String) {
+}
+
+/*
+log_campaign_uuid:  "25838fa6-1be2-4cf5-bf6c-994d24852b6e"
+mac_addr:           "00:11:22:AA:BB:CC"
+os:                 "Android"
+network_type:       ""
+ssid:               "eduroam"
+version:            "0.1.1"
+occurred_at:        "2020-05-16 14:06:30"
+*/
+
+//data class 型である必要はないかも
+data class LogCampaign(val log_campaign_uuid: String, val mac_addr: String, val os: String,
+                       val network_type: String, val ssid: String, val version: String,
+                       val occured_at: String) {
+
 }
 
 //簡単なセッターがあればいい気がする
@@ -32,12 +51,17 @@ data class DiagResult(val layer: String, val log_group: String, val log_type: St
 class Diagnosis constructor(val context: Context) {
 
     private var diag_results = mutableListOf<DiagResult>()
+    private val log_campaign_uuid = UUID.randomUUID()
+
+    /*
     init {
-        val log_campaign_uuid = UUID.randomUUID().toString()
+        log_campaign_uuid = UUID.randomUUID().toString()
     }
+    */
 
     fun startDiagnosis() {
-        test_diag()
+        setLogCampain()
+        testDiag()
 
 //        phase1()
 //        phase2()
@@ -45,6 +69,11 @@ class Diagnosis constructor(val context: Context) {
 //        phase4()
 //        phase5()
         uploadResults()
+        uploadLogCampaign()
+    }
+
+    private fun setLogCampain() {
+
     }
 
     private fun GetSpeed(context: Context): String{
@@ -54,22 +83,66 @@ class Diagnosis constructor(val context: Context) {
         return connectInfo.linkSpeed.toString()
     }
 
-    fun test_diag() {
-        // constructor に書いた方がいいかも
-        val current = LocalDateTime.now()
-        val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
-        val formatted = current.format(formatter)
+    private fun getWifiEnvironment(context: Context): String{
+        val wifiManager = context.getSystemService(Context.WIFI_SERVICE) as WifiManager;
 
-        val campaign_uuid = UUID.randomUUID()
-        var result = DiagResult("dns", "IPv4", "test_diag",
-            campaign_uuid, "1",
-            "192.168.1.1", "this is test", current)
-
-        addDiagResult(result)
+        // API10 からアプリからの wifi on/off できなくなった
+        // Wifi の設定画面を出して、enabled になるまで待つ、という処理が必要
+        if (!wifiManager.isWifiEnabled) {
+            Toast.makeText(context, "WIFI ON", Toast.LENGTH_SHORT).show()
+            wifiManager.setWifiEnabled(true);
+        }
+        if(!wifiManager.isWifiEnabled) return "";
+        // connectInfo まで取れてそう、IP アドレスは正しい
+        val connectInfo = wifiManager.connectionInfo
+        //
+        val state = WifiInfo.getDetailedStateOf(connectInfo?.supplicantState)
+        return wifiManager.connectionInfo.ssid
     }
 
-    fun addDiagResult(entry: DiagResult) {
-        diag_results.add(entry)
+    private fun getInterfaceMacaddr(context: Context): String {
+        val wifiManager = context.getSystemService(Context.WIFI_SERVICE) as WifiManager;
+
+        // API10 からアプリからの wifi on/off できなくなった
+        // Wifi の設定画面を出して、enabled になるまで待つ、という処理が必要
+        if (!wifiManager.isWifiEnabled) {
+            Toast.makeText(context, "WIFI ON", Toast.LENGTH_SHORT).show()
+            wifiManager.setWifiEnabled(true);
+        }
+        if(!wifiManager.isWifiEnabled) return "";
+        // connectInfo まで取れてそう、IP アドレスは正しい
+        val connectInfo = wifiManager.connectionInfo
+        //
+        val state = WifiInfo.getDetailedStateOf(connectInfo?.supplicantState)
+        return wifiManager.connectionInfo.macAddress
+    }
+
+    private fun getLocalTimeString(): String {
+        val current = LocalDateTime.now()
+        val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+
+        return current.format(formatter)
+    }
+
+
+    private fun testDiag() {
+        // constructor に書いた方がいいかも
+
+        val formattedTime = getLocalTimeString()
+        val ssid = getWifiEnvironment(context)
+
+        // val campaign_uuid = UUID.randomUUID()
+        var result = DiagResult("dns", "IPv4", "test_diag",
+            log_campaign_uuid, "1",
+            "192.168.1.1", "this is test", formattedTime)
+
+        diag_results.add(result)
+
+        result = DiagResult("dns", "IPv4", "test_diag",
+            log_campaign_uuid, "1",
+            "192.168.1.1", ssid, formattedTime)
+        diag_results.add(result)
+
     }
 
     fun toJsonString(): String? {
@@ -84,7 +157,8 @@ class Diagnosis constructor(val context: Context) {
         return result
     }
 
-    fun uploadResults() {
+
+    private fun uploadResults() {
         // Kotlin では必要ないのかも
         if (diag_results.isEmpty())
             return
@@ -133,7 +207,53 @@ class Diagnosis constructor(val context: Context) {
         }
     }
 
-    fun phase1() {
+    private fun uploadLogCampaign() {
+        /*
+        log_campaign_uuid:  "25838fa6-1be2-4cf5-bf6c-994d24852b6e"
+        mac_addr:           "00:11:22:AA:BB:CC"
+        os:                 "Android"
+        network_type:       ""
+        ssid:               "eduroam"
+        version:            "0.1.1"
+        occurred_at:        "2020-05-16 14:06:30"
+        */
+        val formattedTime = getLocalTimeString()
+        val logCampaign = LogCampaign(log_campaign_uuid.toString(), getInterfaceMacaddr(context),
+                                        context.getString(R.string.os),
+                                        context.getString(R.string.network_type),
+                                        getWifiEnvironment(context),
+                                        context.getString(R.string.version), formattedTime)
+        var gson = Gson()
+        val jsonString = gson.toJson(logCampaign)
+        Log.i("test", "json string: " + jsonString)
+
+        var con: HttpURLConnection? = null
+        try {
+            val urlStr = "http://fluentd.sindan-net.com:8888/sindan.log"
+            val url = URL(urlStr)
+            con = url.openConnection() as HttpURLConnection
+            con.requestMethod = "POST"
+            con.instanceFollowRedirects = false
+            con.setRequestProperty("User-Agent", "Android");
+            con.addRequestProperty("Content-Type", "application/json; charset=UTF-8")
+            con.doOutput = true
+//                con.doInput = true
+            con.connect()
+
+            val os = con.outputStream
+            val ps = PrintStream(os)
+            ps.print(jsonString)
+            ps.close()
+            val responseCode = con.responseCode
+        } catch (e: InterruptedException) {
+            // 送信ネットワークエラー
+            e.printStackTrace()
+        } finally {
+            con?.disconnect()
+        }
+    }
+
+    private fun phase1() {
         val phase1 = "to-hutohu_phase1"
 
         var wifiManager = context.getSystemService(Context.WIFI_SERVICE) as WifiManager
@@ -328,7 +448,7 @@ class Diagnosis constructor(val context: Context) {
 
         // echo " done."
     }
-    fun phase2() {
+    private fun phase2() {
         val phase2 = "to-hutohu_phase2"
 
         val runtime = Runtime.getRuntime()
@@ -550,7 +670,7 @@ else
 
     }
 
-    fun phase3() {
+    private fun phase3() {
         val phase3 = "to-hutohu_phase3"
 
         val runtime = Runtime.getRuntime()
@@ -646,7 +766,7 @@ done
 
     }
 
-    fun phase4() {
+    private fun phase4() {
         val phase4 = "to-hutohu_phase4"
 
         val runtime = Runtime.getRuntime()
@@ -767,7 +887,7 @@ echo " done."
          */
     }
 
-    fun phase5() {
+    private fun phase5() {
         val phase5 = "to-hutohu_phase5"
 
         val runtime = Runtime.getRuntime()
@@ -937,7 +1057,7 @@ echo " done."
          */
     }
 
-    fun phase6() {
+    private fun phase6() {
         val phase6 = "to-hutohu_phase6"
 
         var wifiManager = context.getSystemService(Context.WIFI_SERVICE) as WifiManager
