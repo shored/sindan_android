@@ -31,4 +31,9 @@
     <string name="excl_ipv6">Exclusion IPv6</string>
     <string name="excl_header">Exclusion</string>
     <string name="diagnosis_progress">Measureing...</string>
+
+    <!-- ここら辺の値は別のリソースファイルに書くべきかもしれない -->
+    <string name="os">Android</string>
+    <string name="version">0.0.1a</string>
+    <string name="network_type">wifi</string>
 </resources>

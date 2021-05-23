@@ -1,24 +1,20 @@
 package com.example.sindanforandroid
 
-import android.app.Dialog
 import android.content.Context
 import android.content.Intent
 import android.net.ConnectivityManager
+import android.net.Network
 import android.net.NetworkCapabilities
 import android.net.wifi.WifiInfo
 import android.net.wifi.WifiManager
-import android.os.AsyncTask
 import android.os.Build
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
-import android.widget.AdapterView
 import android.widget.Button
-import android.widget.ListView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.fragment.app.DialogFragment
 import kotlinx.android.synthetic.main.activity_main.*
 
 
@@ -169,10 +165,12 @@ class MainActivity : AppCompatActivity() {
             wifiManager.setWifiEnabled(true);
         }
         if(!wifiManager.isWifiEnabled) return "";
-        // connectInfo まで取れてそう、IP アドレスは正しい
+
+        // need to grant access permission to location service
+        // otherwise, wifiManager.connectionInfo.ssid returns 'unknown_ssid'
         val connectInfo = wifiManager.connectionInfo
-        //
         val state = WifiInfo.getDetailedStateOf(connectInfo?.supplicantState)
+
         return wifiManager.connectionInfo.ssid
     }
 

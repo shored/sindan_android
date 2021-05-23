@@ -43,6 +43,9 @@ class DiagnosisDialog : DialogFragment() {
         override fun run() {
             var diagnosis = Diagnosis(requireContext())
             diagnosis.startDiagnosis()
+
+            //終了したら Destroy
+            this@DiagnosisDialog.dismiss()
         }
     }
 
