@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <integer name="res_info">10</integer>
+    <integer name="res_success">1</integer>
+    <integer name="res_fail">0</integer>
+</resources>
