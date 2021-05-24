@@ -41,8 +41,9 @@ occurred_at:        "2020-05-16 14:06:30"
 
 //data class 型である必要はないかも
 data class LogCampaign(val log_campaign_uuid: String, val mac_addr: String, val os: String,
-                       val network_type: String, val ssid: String, val version: String,
-                       val occured_at: String) {
+                       val network_type: String,
+                       val ssid: String, val version: String,
+                       val occurred_at: String) {
 
 }
 
@@ -229,7 +230,7 @@ class Diagnosis constructor(val context: Context) {
 
         var con: HttpURLConnection? = null
         try {
-            val urlStr = "http://fluentd.sindan-net.com:8888/sindan.log"
+            val urlStr = "http://fluentd.sindan-net.com:8888/sindan.log_campaign"
             val url = URL(urlStr)
             con = url.openConnection() as HttpURLConnection
             con.requestMethod = "POST"
