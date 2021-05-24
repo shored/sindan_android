@@ -16,6 +16,7 @@ import org.json.JSONObject
 import java.io.PrintStream
 import java.net.HttpURLConnection
 import java.net.InetAddress
+import java.net.NetworkInterface
 import java.net.URL
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -51,20 +52,23 @@ data class LogCampaign(val log_campaign_uuid: String, val mac_addr: String, val 
 //TODO: Diagnosis 自体に log_campaign を示すメンバを入れる
 class Diagnosis constructor(val context: Context) {
 
+
     private var diag_results = mutableListOf<DiagResult>()
     private val log_campaign_uuid = UUID.randomUUID()
+    private val resource = context.resources
+    private val resInfo: String = resource.getInteger(R.integer.res_info).toString()
+    private val resSuccess: String = resource.getInteger(R.integer.res_success).toString()
+    private val resFail: String = resource.getInteger(R.integer.res_fail).toString()
 
     /*
     init {
-        log_campaign_uuid = UUID.randomUUID().toString()
     }
-    */
+     */
 
     fun startDiagnosis() {
-        setLogCampain()
-        testDiag()
+//        testDiag()
 
-//        phase1()
+        phase1()
 //        phase2()
 //        phase3()
 //        phase4()
@@ -73,18 +77,14 @@ class Diagnosis constructor(val context: Context) {
         uploadLogCampaign()
     }
 
-    private fun setLogCampain() {
-
-    }
-
-    private fun GetSpeed(context: Context): String{
+    private fun getSpeed(context: Context): String{
         val wifiManager: WifiManager = context.getSystemService(Context.WIFI_SERVICE) as WifiManager;
         val connectInfo = wifiManager.connectionInfo
         val state = WifiInfo.getDetailedStateOf(connectInfo?.supplicantState)
         return connectInfo.linkSpeed.toString()
     }
 
-    private fun getWifiEnvironment(context: Context): String{
+    private fun getWifiEnvironment(context: Context): WifiInfo {
         val wifiManager = context.getSystemService(Context.WIFI_SERVICE) as WifiManager;
 
         // API10 からアプリからの wifi on/off できなくなった
@@ -93,12 +93,12 @@ class Diagnosis constructor(val context: Context) {
             Toast.makeText(context, "WIFI ON", Toast.LENGTH_SHORT).show()
             wifiManager.setWifiEnabled(true);
         }
-        if(!wifiManager.isWifiEnabled) return "";
+        if(!wifiManager.isWifiEnabled) return wifiManager.connectionInfo;
         // connectInfo まで取れてそう、IP アドレスは正しい
         val connectInfo = wifiManager.connectionInfo
         //
         val state = WifiInfo.getDetailedStateOf(connectInfo?.supplicantState)
-        return wifiManager.connectionInfo.ssid
+        return wifiManager.connectionInfo
     }
 
     private fun getInterfaceMacaddr(context: Context): String {
@@ -130,7 +130,7 @@ class Diagnosis constructor(val context: Context) {
         // constructor に書いた方がいいかも
 
         val formattedTime = getLocalTimeString()
-        val ssid = getWifiEnvironment(context)
+        val ssid = getWifiEnvironment(context).ssid
 
         // val campaign_uuid = UUID.randomUUID()
         var result = DiagResult("dns", "IPv4", "test_diag",
@@ -220,9 +220,11 @@ class Diagnosis constructor(val context: Context) {
         */
         val formattedTime = getLocalTimeString()
         val logCampaign = LogCampaign(log_campaign_uuid.toString(), getInterfaceMacaddr(context),
-                                        context.getString(R.string.os),
+                                        context.getString(R.string.os) + " "
+                                        + android.os.Build.VERSION.RELEASE
+                                        + " API level " + android.os.Build.VERSION.SDK_INT,
                                         context.getString(R.string.network_type),
-                                        getWifiEnvironment(context),
+                                        getWifiEnvironment(context).ssid,
                                         context.getString(R.string.version), formattedTime)
         var gson = Gson()
         val jsonString = gson.toJson(logCampaign)
@@ -254,6 +256,24 @@ class Diagnosis constructor(val context: Context) {
         }
     }
 
+    private fun frequencyToChannel(frequency: Int) :Int {
+        val channelMapping : Map<Int, Int> = mapOf(
+            2412 to 1, 2417 to 2, 2422 to 3, 2427 to 4, 2432 to 5, 2437 to 6, 2442 to 7,
+            2447 to 8, 2452 to 9, 2457 to 10, 2462 to 11, 2467 to 12, 2472 to 13, 2475 to 14,
+            5180 to 36, 5200 to 40, 5220 to 44, 5240 to 48, 5260 to 52, 5280 to 56,
+            5300 to 60, 5320 to 64,
+            5500 to 100, 5520 to 104, 5540 to 108, 5560 to 112, 5580 to 116, 5600 to 120,
+            5620 to 124, 5640 to 128, 5660 to 132, 5680 to 136, 5700 to 140, 5720 to 144
+        )
+
+        val result = channelMapping[frequency]
+
+        if (result != null)
+            return result
+        else
+            return 0
+    }
+
     private fun phase1() {
         val phase1 = "to-hutohu_phase1"
 
@@ -273,11 +293,20 @@ class Diagnosis constructor(val context: Context) {
         }
         Log.i(phase1, "\n\n\n=========== Phase1 Start ===========")
 
+        // TODO: phase1 じゃなく、全体で計測に使う interface を決める必要がある
+        // 複数（だいたいWWANとWiFiとBlueTooth）
+        val interfaces = NetworkInterface.getNetworkInterfaces()
+
         // # Get current SSID
         // if [ ${IFTYPE} = "Wi-Fi" ]; then
         // pre_ssid=$(get_wifi_ssid)
         // fi
-        Log.i(phase1, "Current SSID: " + wifiInfo.ssid)
+        // Log.i(phase1, "Current SSID: " + wifiInfo.ssid)
+        var result = DiagResult("datalink", "Wi-Fi", "ssid",
+                            log_campaign_uuid, resInfo,
+                            "self", getWifiEnvironment(context).ssid,
+                            getLocalTimeString())
+        diag_results.add(result)
 
         // # Down, Up interface
         // if [ ${RECONNECT} = "yes" ]; then
@@ -307,7 +336,7 @@ class Diagnosis constructor(val context: Context) {
         // #  networksetup -setairportnetwork ${devicename} "${pre_ssid}"
         // #  sleep 5
         // fi
-        // TODO: 恐らく必要ではないので
+        // Android 版では本体設定で設定してある wifi に接続する
 
         // # Check I/F status
         // result_phase1=${FAIL}
@@ -326,12 +355,21 @@ class Diagnosis constructor(val context: Context) {
         // fi
 
         // この流れだといつでもactiveだと思うけど
-        Log.i(phase1, "isActive: " + if (wifiManager.isWifiEnabled) "true" else "false")
+        // Log.i(phase1, "isActive: " + if (wifiManager.isWifiEnabled) "true" else "false")
+        result = DiagResult("datalink", "common", "ifstatus",
+            log_campaign_uuid, if (wifiManager.isWifiEnabled) resSuccess else resFail,
+            "self", if (wifiManager.isWifiEnabled) "up" else "down",
+            getLocalTimeString())
+        diag_results.add(result)
 
         // # Get iftype
         //         write_json ${layer} "common" iftype ${INFO} self ${IFTYPE} 0
         // TODO: とりあえずWi-Fi固定
-        Log.i(phase1, "IFType: Wi-Fi")
+        result = DiagResult("datalink", "common", "iftype",
+            log_campaign_uuid, resInfo,
+            "self", "Wi-Fi",
+            getLocalTimeString())
+        diag_results.add(result)
 
         // # Get ifmtu
         //         ifmtu=$(get_ifmtu ${devicename})
@@ -349,40 +387,40 @@ class Diagnosis constructor(val context: Context) {
         // fi
         // TODO: Wi-Fi固定なので不要
 
-        // else
-        // # Get Wi-Fi SSID
-        //         ssid=$(get_wifi_ssid)
-        // if [ -n "${ssid}" ]; then
-        // write_json ${layer} "${IFTYPE}" ssid ${INFO} self "${ssid}" 0
-        Log.i(phase1, "SSID: " + wifiResult.SSID)
-
         // fi
         // # Get Wi-Fi BSSID
         //         bssid=$(get_wifi_bssid)
         // if [ -n "${bssid}" ]; then
         // write_json ${layer} "${IFTYPE}" bssid ${INFO} self ${bssid} 0
         // fi
-        Log.i(phase1, "BSSID: " + wifiResult.BSSID)
+        //Log.i(phase1, "BSSID: " + wifiResult.BSSID)
+        result = DiagResult("datalink", "Wi-Fi", "bssid",
+            log_campaign_uuid, resInfo,
+            "self", getWifiEnvironment(context).bssid,
+            getLocalTimeString())
+        diag_results.add(result)
 
         // # Get Wi-Fi channel
         //         channel=$(get_wifi_channel)
         // if [ -n "${channel}" ]; then
         // write_json ${layer} "${IFTYPE}" channel ${INFO} self ${channel} 0
         // fi
-
-        // TODO: 下から計算可能？
-        Log.i(phase1, "    Frequency: " + wifiResult.frequency)
-        Log.i(phase1, "    Ch Width: " + wifiResult.channelWidth)
+        result = DiagResult("datalink", "Wi-Fi", "channel",
+            log_campaign_uuid, resInfo,
+            "self", frequencyToChannel(getWifiEnvironment(context).frequency).toString(),
+            getLocalTimeString())
+        diag_results.add(result)
 
         // # Get Wi-Fi RSSI
         //         rssi=$(get_wifi_rssi)
         // if [ -n "${rssi}" ]; then
         // write_json ${layer} "${IFTYPE}" rssi ${INFO} self ${rssi} 0
         // fi
-
-        // wifiInfo.rssiとwifiResult.levelは同じものらしい
-        Log.i(phase1, "RSSI: " + wifiInfo.rssi)
-
+        result = DiagResult("datalink", "Wi-Fi", "rssi",
+            log_campaign_uuid, resInfo,
+            "self", getWifiEnvironment(context).rssi.toString(),
+            getLocalTimeString())
+        diag_results.add(result)
 
         // # Get Wi-Fi noise
         //         noise=$(get_wifi_noise)
@@ -403,6 +441,11 @@ class Diagnosis constructor(val context: Context) {
         // if [ -n "${rate}" ]; then
         // write_json ${layer} "${IFTYPE}" rate ${INFO} self ${rate} 0
         // fi
+        result = DiagResult("datalink", "Wi-Fi", "rate",
+            log_campaign_uuid, resInfo,
+            "self", getSpeed(context),
+            getLocalTimeString())
+        diag_results.add(result)
         Log.i(phase1, "Rate: "+ wifiInfo.linkSpeed)
 
         // # Get Wi-Fi environment
