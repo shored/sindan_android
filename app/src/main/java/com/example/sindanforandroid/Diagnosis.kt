@@ -1,6 +1,8 @@
 package com.example.sindanforandroid
 
 import android.content.Context
+import android.content.Context.CONNECTIVITY_SERVICE
+import android.net.ConnectivityManager
 import android.net.DnsResolver
 import android.net.wifi.WifiInfo
 import android.net.wifi.WifiManager
@@ -59,6 +61,10 @@ class Diagnosis constructor(val context: Context) {
     private val resInfo: String = resource.getInteger(R.integer.res_info).toString()
     private val resSuccess: String = resource.getInteger(R.integer.res_success).toString()
     private val resFail: String = resource.getInteger(R.integer.res_fail).toString()
+    private val manager = context.getSystemService(CONNECTIVITY_SERVICE) as ConnectivityManager
+    // Use the currentNetwork and linkProperty during diagnosis startup.
+    private val currentNetwork = manager.activeNetwork
+    private val lp = manager.getLinkProperties(currentNetwork)
 
     /*
     init {
@@ -66,10 +72,8 @@ class Diagnosis constructor(val context: Context) {
      */
 
     fun startDiagnosis() {
-//        testDiag()
-
         phase1()
-//        phase2()
+        phase2()
 //        phase3()
 //        phase4()
 //        phase5()
@@ -84,7 +88,9 @@ class Diagnosis constructor(val context: Context) {
         return connectInfo.linkSpeed.toString()
     }
 
+
     private fun getWifiEnvironment(context: Context): WifiInfo {
+
         val wifiManager = context.getSystemService(Context.WIFI_SERVICE) as WifiManager;
 
         // API10 からアプリからの wifi on/off できなくなった
@@ -123,27 +129,6 @@ class Diagnosis constructor(val context: Context) {
         val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
 
         return current.format(formatter)
-    }
-
-
-    private fun testDiag() {
-        // constructor に書いた方がいいかも
-
-        val formattedTime = getLocalTimeString()
-        val ssid = getWifiEnvironment(context).ssid
-
-        // val campaign_uuid = UUID.randomUUID()
-        var result = DiagResult("dns", "IPv4", "test_diag",
-            log_campaign_uuid, "1",
-            "192.168.1.1", "this is test", formattedTime)
-
-        diag_results.add(result)
-
-        result = DiagResult("dns", "IPv4", "test_diag",
-            log_campaign_uuid, "1",
-            "192.168.1.1", ssid, formattedTime)
-        diag_results.add(result)
-
     }
 
     fun toJsonString(): String? {
@@ -256,6 +241,10 @@ class Diagnosis constructor(val context: Context) {
         }
     }
 
+    private fun ipToString(ipAddress:Int):String{
+        return (ipAddress and 0xFF).toString()+"."+(ipAddress shr 8 and 0xFF)+"."+(ipAddress shr 16 and 0xFF)+"."+(ipAddress shr 24 and 0xFF)
+    }
+
     private fun frequencyToChannel(frequency: Int) :Int {
         val channelMapping : Map<Int, Int> = mapOf(
             2412 to 1, 2417 to 2, 2422 to 3, 2427 to 4, 2432 to 5, 2437 to 6, 2442 to 7,
@@ -298,10 +287,8 @@ class Diagnosis constructor(val context: Context) {
         val interfaces = NetworkInterface.getNetworkInterfaces()
 
         // # Get current SSID
-        // if [ ${IFTYPE} = "Wi-Fi" ]; then
-        // pre_ssid=$(get_wifi_ssid)
-        // fi
-        // Log.i(phase1, "Current SSID: " + wifiInfo.ssid)
+        // 本体の設定で位置情報の取得をこのアプリに許可していないと
+        // connectInfo.ssid に <unknown_ssid> が入る
         var result = DiagResult("datalink", "Wi-Fi", "ssid",
                             log_campaign_uuid, resInfo,
                             "self", getWifiEnvironment(context).ssid,
@@ -376,7 +363,17 @@ class Diagnosis constructor(val context: Context) {
         // if [ -n "${ifmtu}" ]; then
         // write_json ${layer} "common" ifmtu ${INFO} self ${ifmtu} 0
         // fi
-        // TODO: 1500固定じゃないかな
+        // TODO: 0 になるのでおかしい
+        // default 値から違う場合のみ意味のある値を返して、デフォルトのままだと 0 を返す
+        // default 値を取得するのは root が必要？
+        result = DiagResult("datalink", "common", "ifmtu",
+            log_campaign_uuid, resInfo,
+            "self", manager.getLinkProperties(currentNetwork).mtu.toString() ,
+            getLocalTimeString())
+        diag_results.add(result)
+
+        Log.i(phase1, "lp: " + lp.toString())
+
 
         // #
         // if [ "${IFTYPE}" != "Wi-Fi" ]; then
@@ -387,13 +384,7 @@ class Diagnosis constructor(val context: Context) {
         // fi
         // TODO: Wi-Fi固定なので不要
 
-        // fi
         // # Get Wi-Fi BSSID
-        //         bssid=$(get_wifi_bssid)
-        // if [ -n "${bssid}" ]; then
-        // write_json ${layer} "${IFTYPE}" bssid ${INFO} self ${bssid} 0
-        // fi
-        //Log.i(phase1, "BSSID: " + wifiResult.BSSID)
         result = DiagResult("datalink", "Wi-Fi", "bssid",
             log_campaign_uuid, resInfo,
             "self", getWifiEnvironment(context).bssid,
@@ -401,10 +392,6 @@ class Diagnosis constructor(val context: Context) {
         diag_results.add(result)
 
         // # Get Wi-Fi channel
-        //         channel=$(get_wifi_channel)
-        // if [ -n "${channel}" ]; then
-        // write_json ${layer} "${IFTYPE}" channel ${INFO} self ${channel} 0
-        // fi
         result = DiagResult("datalink", "Wi-Fi", "channel",
             log_campaign_uuid, resInfo,
             "self", frequencyToChannel(getWifiEnvironment(context).frequency).toString(),
@@ -412,10 +399,6 @@ class Diagnosis constructor(val context: Context) {
         diag_results.add(result)
 
         // # Get Wi-Fi RSSI
-        //         rssi=$(get_wifi_rssi)
-        // if [ -n "${rssi}" ]; then
-        // write_json ${layer} "${IFTYPE}" rssi ${INFO} self ${rssi} 0
-        // fi
         result = DiagResult("datalink", "Wi-Fi", "rssi",
             log_campaign_uuid, resInfo,
             "self", getWifiEnvironment(context).rssi.toString(),
@@ -532,6 +515,7 @@ fi
         // TODO: 不明
 
 
+
 /*
 # Check IPv4 autoconf
 result_phase2_1=${FAIL}
@@ -549,16 +533,14 @@ write_json ${layer} IPv4 v4autoconf ${result_phase2_1} self "${v4autoconf}" 0
 */
 
         // TODO: autoconfがわからない
-/*
-# Get IPv4 address
-v4addr=$(get_v4addr ${devicename})
-if [ -n "${v4addr}" ]; then
-  write_json ${layer} IPv4 v4addr ${INFO} self ${v4addr} 0
-fi
-*/
-        runtime.exec("ip addr")
-        Log.i(phase2, "" + wifiInfo.ipAddress)
-        Log.i(phase2, "IPv4 Address: " + InetAddress.getByAddress(wifiInfo.ipAddress.toBigInteger().toByteArray().reversedArray()).hostAddress)
+
+
+        // # Get IPv4 address
+        var result = DiagResult("interface", "IPv4", "v4addr",
+            log_campaign_uuid, resInfo,
+            "self", ipToString(wifiInfo.ipAddress),
+            getLocalTimeString())
+        diag_results.add(result)
 
 /*
 # Get IPv4 netmask
@@ -570,25 +552,20 @@ fi
         // これで取れるはずなのだが0が返ってくる
         Log.i(phase2, "" + dhcpInfo.netmask)
 
-/*
-# Get IPv4 routers
-v4routers=$(get_v4routers ${devicename})
-if [ -n "${v4routers}" ]; then
-  write_json ${layer} IPv4 v4routers ${INFO} self "${v4routers}" 0
-fi
-*/
-        Log.i(phase2, "IPv4 Router: " + InetAddress.getByAddress(dhcpInfo.gateway.toBigInteger().toByteArray().reversedArray()).hostAddress)
-        /*
-# Get IPv4 name servers
-v4nameservers=$(get_v4nameservers)
-if [ -n "${v4nameservers}" ]; then
-  write_json ${layer} IPv4 v4nameservers ${INFO} self "${v4nameservers}" 0
-fi
-*/
-        Log.i(phase2, "IPv4 DNS: " + InetAddress.getByAddress(dhcpInfo.dns1.toBigInteger().toByteArray().reversedArray()).hostAddress)
-        if (dhcpInfo.dns2 != 0) {
-            Log.i(phase2, "IPv4 DNS: " + InetAddress.getByAddress(dhcpInfo.dns2.toBigInteger().toByteArray().reversedArray()).hostAddress)
-        }
+        // # Get IPv4 routers
+        result = DiagResult("interface", "IPv4", "v4routers",
+            log_campaign_uuid, resInfo,
+            "self", ipToString(dhcpInfo.gateway),
+            getLocalTimeString())
+        diag_results.add(result)
+
+        // # Get IPv4 name servers
+        result = DiagResult("interface", "IPv4", "v4nameservers",
+            log_campaign_uuid, resInfo,
+            "self", ipToString(dhcpInfo.dns1)
+                                   + if (dhcpInfo.dns2 != 0) "," + ipToString(dhcpInfo.dns2) else "",
+            getLocalTimeString())
+        diag_results.add(result)
 
         /*
 # Get IPv4 NTP servers
