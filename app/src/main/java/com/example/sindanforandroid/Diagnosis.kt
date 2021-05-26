@@ -274,12 +274,14 @@ class Diagnosis constructor(val context: Context) {
 
         var wifiInfo = wifiManager.connectionInfo
         var wifiResults = wifiManager.scanResults
+        /*
         var wifiResult = wifiResults.find { r -> r.SSID == wifiInfo.ssid.replace("\"", "") }
 
         if (wifiResult == null) {
             Log.e(phase1, "Wi-Fi does not found")
             return
         }
+        */
         Log.i(phase1, "\n\n\n=========== Phase1 Start ===========")
 
         // TODO: phase1 じゃなく、全体で計測に使う interface を決める必要がある
@@ -488,12 +490,14 @@ class Diagnosis constructor(val context: Context) {
 
         var wifiInfo = wifiManager.connectionInfo
         var wifiResults = wifiManager.scanResults
+        /*
         var wifiResult = wifiResults.find { r -> r.SSID == wifiInfo.ssid.replace("\"", "") }
 
         if (wifiResult == null) {
             Log.e(phase2, "Wi-Fi does not found")
             return
         }
+        */
         var dhcpInfo =  wifiManager.dhcpInfo
 
         Log.i(phase2, "\n\n\n=========== Phase2 Start ===========")
