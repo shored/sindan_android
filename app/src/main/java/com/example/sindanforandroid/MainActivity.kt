@@ -1,7 +1,9 @@
 package com.example.sindanforandroid
 
+import android.Manifest
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
@@ -13,12 +15,14 @@ import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.widget.Button
+import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import kotlinx.android.synthetic.main.activity_main.*
 
 
 class MainActivity : AppCompatActivity() {
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -49,6 +53,22 @@ class MainActivity : AppCompatActivity() {
         override fun onClick(p0: View?) {
             val measureDialog = DiagnosisDialog.newInstance("表示するメッセージ")
             measureDialog.show(supportFragmentManager, "DiagnosisDialog")
+
+            //権限取得
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED ||
+                    checkSelfPermission(Manifest.permission.ACCESS_WIFI_STATE) != PackageManager.PERMISSION_GRANTED ||
+                    checkSelfPermission(Manifest.permission.ACCESS_NETWORK_STATE) != PackageManager.PERMISSION_GRANTED
+                ) {
+                    requestPermissions(
+                        arrayOf(
+                            Manifest.permission.ACCESS_FINE_LOCATION,
+                            Manifest.permission.ACCESS_WIFI_STATE,
+                            Manifest.permission.ACCESS_NETWORK_STATE
+                        ),1
+                    )
+                }
+            }
         }
     }
 
